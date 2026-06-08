@@ -49,38 +49,33 @@ export const DownloadInvoiceButton = () => {
                   invoiceDetails.currency.toLowerCase()
               )?.details;
 
-              const defaultCurrency = currencyList.find(
-                (currencyDetail) =>
-                  currencyDetail.value.toLowerCase() === "INR".toLowerCase()
-              )?.details;
-
-              const data = await fetch(
-                `/flag/1x1/${
-                  currencyDetails?.iconName || defaultCurrency?.iconName
-                }.svg`
-              );
-              const svgFlag = await data.text();
-              const countryImageUrl = await svgToDataUri(svgFlag);
-              if (countryImageUrl) {
-                const blob = await pdf(
-                  <Document>
-                    <Page size="A4" style={pdfContainers.page}>
-                      <PdfDetails
-                        companyDetails={companyDetails}
-                        invoiceDetails={invoiceDetails}
-                        invoiceTerms={invoiceTerms}
-                        paymentDetails={paymentDetails}
-                        yourDetails={yourDetails}
-                        countryImageUrl={countryImageUrl}
-                      />
-                    </Page>
-                  </Document>
-                ).toBlob();
-                saveAs(blob, "invoice.pdf");
-                setStatus("downloaded");
-              } else {
-                setStatus("not-downloaded");
+              const flagIconName = currencyDetails?.iconName || "US";
+              let countryImageUrl = "";
+              try {
+                const data = await fetch(`/flag/1x1/${flagIconName}.svg`);
+                if (data.ok) {
+                  const svgFlag = await data.text();
+                  countryImageUrl = (await svgToDataUri(svgFlag)) || "";
+                }
+              } catch (e) {
+                console.error("Flag fetch failed, continuing without flag:", e);
               }
+              const blob = await pdf(
+                <Document>
+                  <Page size="A4" style={pdfContainers.page}>
+                    <PdfDetails
+                      companyDetails={companyDetails}
+                      invoiceDetails={invoiceDetails}
+                      invoiceTerms={invoiceTerms}
+                      paymentDetails={paymentDetails}
+                      yourDetails={yourDetails}
+                      countryImageUrl={countryImageUrl}
+                    />
+                  </Page>
+                </Document>
+              ).toBlob();
+              saveAs(blob, "invoice.pdf");
+              setStatus("downloaded");
             } catch (e) {
               console.error(e);
               setStatus("not-downloaded");
